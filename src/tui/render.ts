@@ -6,8 +6,8 @@ import { earlyArtifact, waveArtifact, peakArtifact } from '../models.js';
 
 const tone = (stage: string): Color => ['ACTIVE', 'IMPULSE', 'rank_only'].includes(stage) ? 'green' : ['INVALIDATED', 'INSUFFICIENT HISTORY'].includes(stage) ? 'red' : ['BASE FORMING', 'PULLBACK'].includes(stage) ? 'gold' : 'muted';
 function chart(c: Canvas, x: number, y: number, width: number, height: number, row: DeskRow) {
-  const ticks = row.market.history?.ticks.filter(t => t.price !== null) ?? [];
-  if (ticks.length < 2) { c.text(x, y + 2, 'NO RETAINED POOL TAPE', 'muted'); c.text(x, y + 3, 'Quotes appear as RPC events arrive', 'muted'); return; }
+  const ticks = (row.market.history?.ticks ?? row.market.tape ?? []).filter(t => t.price !== null);
+  if (ticks.length < 2) { c.text(x, y + 2, 'NO RETAINED PRICE TAPE', 'muted'); c.text(x, y + 3, 'Quotes appear as RPC events arrive', 'muted'); return; }
   const prices = ticks.map(t => t.price!);
   const min = Math.min(...prices), max = Math.max(...prices), span = max - min || max * .01;
   for (let line = 0; line < height; line++) if (!(line % 3)) c.text(x, y + line, '┄'.repeat(width), 'line');
@@ -25,6 +25,16 @@ function detail(c: Canvas, row: DeskRow | undefined, x: number, y: number, w: nu
   c.box(x, y, w, h, 'TOKEN / LOCAL INFERENCE');
   if (!row) { c.text(x + 3, y + 3, 'Nothing matches this view', 'muted'); return; }
   const m = row.market, full = w - 6;
+  if (h < 25) {
+    c.text(x + 3, y + 2, fit(`$${m.symbol || m.address.slice(2, 8)} / ${m.name ?? 'Unnamed launch'}`, full), 'text', 'bg', true);
+    c.text(x + 3, y + 3, fit(`${price(m.priceQuote)} ${m.quoteSymbol ?? 'QUOTE UNKNOWN'}`, full), 'green');
+    c.text(x + 3, y + 5, fit(m.phase === 'migrated' ? row.wave.stage : `${top(row.early.topPercent)} / ${row.early.state}`, full), 'green');
+    c.text(x + 3, y + 6, fit(m.phase === 'migrated' ? `TARGET ${price(row.wave.target)} / INVALID ${price(row.wave.invalidation)}` : row.early.reasons[0]?.text ?? 'Model context unavailable', full), 'muted');
+    c.text(x + 3, y + 7, fit(m.phase === 'migrated' ? `SELL / 60s ${percent(row.wave.pressure === null ? null : row.wave.pressure * 100)} / ${row.wave.pressureComplete ? 'complete' : 'partial'}` : row.early.reasons[1]?.text ?? row.early.state, full), 'muted');
+    if (h >= 19) chart(c, x + 3, y + 9, full, 3, row);
+    c.text(x + 3, y + h - 4, 'CONTRACT / ROBINHOOD CHAIN', 'muted');
+    wrap(m.address, full).forEach((line, i) => c.text(x + 3, y + h - 3 + i, line, 'aqua')); return;
+  }
   c.text(x + 3, y + 2, fit(`$${m.symbol || m.address.slice(2, 8)}`, full), 'text', 'bg', true);
   c.text(x + 3, y + 3, fit(m.name ?? 'Unnamed launch', full), 'muted');
   c.text(x + 3, y + 5, fit(`${price(m.priceQuote)} ${m.quoteSymbol ?? 'QUOTE UNKNOWN'}`, full), 'green', 'bg', true);
@@ -101,7 +111,7 @@ export function render(session: Session, rows: DeskRow[], state: DeskState, colu
     }
   }
   c.text(2, h - 4, fit(state.editing ? `SEARCH / ${state.query}_` : state.syncing ? `${['◐','◓','◑','◒'][state.tick % 4]} ${state.sync || 'CONNECTING RPC'}` : state.notice || (state.query ? `FILTER / ${state.query}` : 'READ THE MOVE / Every model calculation happens on this machine'), w - 4), state.editing ? 'green' : state.syncing ? 'aqua' : 'muted');
-  c.text(2, h - 2, fit('[/] search  [s] sort  [f] filter  [l] live RPC  [e] export  [?] keys  [q] quit', w - 4), 'text', 'panel');
+  c.text(2, h - 2, fit(w < 100 ? '[/] find  [s] sort  [f] filter  [l] live  [?] help  [q] quit' : '[/] search  [s] sort  [f] filter  [l] live RPC  [e] export  [?] keys  [q] quit', w - 4), 'text', 'panel');
   if (state.help) help(c);
   return c;
 }

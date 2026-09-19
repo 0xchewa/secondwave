@@ -1,4 +1,4 @@
-import type { PoolHistory } from './engines/wave/detector.js';
+import type { PoolHistory, Tick } from './engines/wave/detector.js';
 import type { CoverageRange } from './engines/coverage.js';
 
 export const CHAIN_ID = 4663;
@@ -11,7 +11,7 @@ export type Market = {
   decimals: number | null; curve: string; thresholdRaw: string;
   featureSnapshot: number[] | null;
   priceQuote: string | null; priceAt: number | null; curveProgress: number | null;
-  pool?: Pool; history?: PoolHistory; coverage: CoverageRange[];
+  pool?: Pool; history?: PoolHistory; tape?: Tick[]; coverage: CoverageRange[];
   checkpoint?: any; terminalGate?: { state: string; reason: string } | null;
 };
 export type Session = {

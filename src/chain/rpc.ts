@@ -4,7 +4,10 @@ const READ_METHODS = new Set(['eth_chainId', 'eth_blockNumber', 'eth_getBlockByN
 export class RpcError extends Error {
   constructor(public code: string) { super(code); this.name = 'RpcError'; }
 }
-export interface RpcReader { call<T = any>(method: string, params?: unknown[]): Promise<T> }
+export interface RpcReader {
+  call<T = any>(method: string, params?: unknown[]): Promise<T>;
+  batch?(requests: { method: string; params: unknown[] }[]): Promise<any[]>;
+}
 export class Rpc implements RpcReader {
   requests = 0;
   private next = 0;
@@ -17,6 +20,24 @@ export class Rpc implements RpcReader {
   async call<T = any>(method: string, params: unknown[] = []): Promise<T> {
     if (!READ_METHODS.has(method)) throw new RpcError('READ_ONLY_RPC_METHOD_REQUIRED');
     const id = ++this.id;
+    const body = await this.request({ jsonrpc: '2.0', id, method, params });
+    return this.result(body, id);
+  }
+  private result(body: any, id: number) {
+    if (body?.id !== id || body.jsonrpc !== '2.0') throw new RpcError('RPC_INVALID_ENVELOPE');
+    if (body.error) throw new RpcError(`RPC_RESPONSE_${Number.isSafeInteger(body.error.code) ? body.error.code : 'ERROR'}`);
+    if (!('result' in body)) throw new RpcError('RPC_MISSING_RESULT');
+    return body.result;
+  }
+  async batch(requests: { method: string; params: unknown[] }[]) {
+    if (requests.length > 10 || requests.some(r => !READ_METHODS.has(r.method))) throw new RpcError('INVALID_READ_BATCH');
+    if (!requests.length) return [];
+    const payload = requests.map(r => ({ jsonrpc: '2.0', id: ++this.id, ...r }));
+    const body = await this.request(payload);
+    if (!Array.isArray(body) || body.length !== payload.length) throw new RpcError('RPC_BATCH_UNSUPPORTED');
+    return payload.map(p => this.result(body.find(r => r.id === p.id), p.id));
+  }
+  private async request(payload: unknown): Promise<any> {
     for (let attempt = 0; attempt < 4; attempt++) {
       this.signal?.throwIfAborted();
       const delay = Math.max(0, this.next - Date.now());
@@ -25,7 +46,7 @@ export class Rpc implements RpcReader {
       let response: Response;
       try {
         response = await fetch(this.endpoint, { method: 'POST', redirect: 'error',
-          headers: { 'content-type': 'application/json' }, body: JSON.stringify({ jsonrpc: '2.0', id, method, params }),
+          headers: { 'content-type': 'application/json' }, body: JSON.stringify(payload),
           signal: this.signal ? AbortSignal.any([this.signal, AbortSignal.timeout(20000)]) : AbortSignal.timeout(20000) });
         this.requests++;
       } catch {
@@ -43,14 +64,16 @@ export class Rpc implements RpcReader {
       if (!response.ok) throw new RpcError(`RPC_HTTP_${response.status}`);
       const length = Number(response.headers.get('content-length'));
       if (length > 16 * 1024 ** 2) throw new RpcError('RPC_RESPONSE_TOO_LARGE');
-      const bytes = await response.arrayBuffer();
-      if (bytes.byteLength > 16 * 1024 ** 2) throw new RpcError('RPC_RESPONSE_TOO_LARGE');
+      const chunks: Uint8Array[] = []; let total = 0;
+      for await (const chunk of response.body!) {
+        total += chunk.byteLength;
+        if (total > 16 * 1024 ** 2) throw new RpcError('RPC_RESPONSE_TOO_LARGE');
+        chunks.push(chunk);
+      }
+      const bytes = Buffer.concat(chunks);
       let body: any;
       try { body = JSON.parse(Buffer.from(bytes).toString()); } catch { throw new RpcError('RPC_INVALID_JSON'); }
-      if (body.id !== id || body.jsonrpc !== '2.0') throw new RpcError('RPC_INVALID_ENVELOPE');
-      if (body.error) throw new RpcError(`RPC_RESPONSE_${Number.isSafeInteger(body.error.code) ? body.error.code : 'ERROR'}`);
-      if (!('result' in body)) throw new RpcError('RPC_MISSING_RESULT');
-      return body.result;
+      return body;
     }
     throw new RpcError('RPC_RETRY_EXHAUSTED');
   }

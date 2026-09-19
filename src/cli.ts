@@ -62,7 +62,7 @@ async function main() {
       }
     } finally { await unlock(); process.off('SIGINT', stop); process.off('SIGTERM', stop); } return;
   }
-  const session = values.input ? await loadSession(values.input) : values.live ? (await readState(statePath)).session : await loadSession();
+  const session = values.input ? await loadSession(values.input) : values.live || values.state ? (await readState(statePath)).session : await loadSession();
   if (values.input && values.live) throw Error('INPUT_AND_LIVE_ARE_SEPARATE_MODES');
   const rows = session.markets.map(m => scoreMarket(m, session.asOf)), state = initialDesk();
   if (values.mode && !['early', 'wave', 'models'].includes(values.mode)) throw Error('INVALID_MODE');

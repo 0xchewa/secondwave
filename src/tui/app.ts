@@ -88,7 +88,7 @@ export async function runDesk(initial: Session, options: { live?: boolean; rpc: 
   }
   emitKeypressEvents(process.stdin);
   process.stdin.setRawMode(true); process.stdin.resume();
-  process.stdout.write('\x1b[?1049h\x1b[?25l\x1b[2J');
+  process.stdout.write('\x1b[?1049h\x1b[?25l\x1b[?7l\x1b[2J');
   process.stdin.on('keypress', keypress); process.stdout.on('resize', draw);
   process.once('SIGTERM', close); process.once('SIGINT', close);
   const animation = setInterval(() => { desk.tick++; draw(); }, 500);
@@ -98,7 +98,7 @@ export async function runDesk(initial: Session, options: { live?: boolean; rpc: 
     process.stdin.off('keypress', keypress); process.stdout.off('resize', draw);
     process.off('SIGTERM', close); process.off('SIGINT', close);
     process.stdin.setRawMode(false); process.stdin.pause();
-    process.stdout.write('\x1b[0m\x1b[?25h\x1b[?1049l');
+    process.stdout.write('\x1b[0m\x1b[?7h\x1b[?25h\x1b[?1049l');
     if (syncTask) await syncTask;
   }
 }

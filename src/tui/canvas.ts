@@ -20,14 +20,14 @@ export class Canvas {
   }
   plain() { return this.cells.map(row => row.map(c => c.c).join('')).join('\n'); }
   ansi(color = true) {
-    if (!color) return this.plain();
+    if (!color) return this.plain().replaceAll('\n', '\r\n');
     const rgb = (key: Color) => palette[key].slice(1).match(/../g)!.map(h => parseInt(h, 16)).join(';');
     let previous = '', out = '';
     for (const row of this.cells) { for (const c of row) {
       const key = `${c.fg}/${c.bg}/${c.bold}`;
       if (key !== previous) { out += `\x1b[0;38;2;${rgb(c.fg)};48;2;${rgb(c.bg)}${c.bold ? ';1' : ''}m`; previous = key; }
       out += c.c;
-    } out += '\x1b[0m\n'; previous = ''; }
+    } out += '\x1b[0m\r\n'; previous = ''; }
     return out.trimEnd() + '\x1b[0m';
   }
 }

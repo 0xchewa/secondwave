@@ -31,13 +31,14 @@ export function validateSession(value: any): Session {
     m.coverage = m.coverage.map((r: any) => {
       assert.ok(Number.isFinite(r.fromTime) && Number.isFinite(r.toTime) && r.fromTime <= r.toTime);
       const fromBlock = BigInt(r.fromBlock), toBlock = BigInt(r.toBlock);
-      assert.ok(fromBlock <= toBlock && toBlock <= BigInt(value.block));
+      assert.ok(fromBlock <= toBlock && toBlock <= BigInt(value.block), 'Coverage exceeds the recorded block boundary');
       return { ...r, fromBlock, toBlock };
     });
-    if (m.history) {
-      assert.ok(m.history.token === m.address && Array.isArray(m.history.ticks) && m.history.ticks.length <= 12000);
+    if (m.history) assert.equal(m.history.token, m.address);
+    for (const ticks of [m.history?.ticks, m.tape].filter(v => v !== undefined)) {
+      assert.ok(Array.isArray(ticks) && ticks.length <= 12000);
       let last = [-1, -1];
-      for (const t of m.history.ticks) {
+      for (const t of ticks) {
         assert.ok(Number.isSafeInteger(t.block) && t.block <= value.block && Number.isSafeInteger(t.log));
         assert.ok(t.block > last[0] || t.block === last[0] && t.log > last[1], 'Unordered or duplicate market event');
         assert.ok(Number.isFinite(t.ts) && t.ts <= value.asOf && (t.price === null || Number.isFinite(t.price) && t.price > 0));
@@ -49,14 +50,15 @@ export function validateSession(value: any): Session {
   return value;
 }
 export async function loadSession(path = bundledSession) { return validateSession(await readJson(path)); }
-export async function loadSeed(path = bundledSeed): Promise<Seed> {
-  const seed = await readJson(path);
+export function validateSeed(seed: any): Seed {
   assert.equal(seed.format, 'secondwave-seed-v1'); assert.equal(seed.chainId, CHAIN_ID);
-  assert.ok(Number.isSafeInteger(seed.next) && hash.test(seed.hash) && seed.missing === 0, 'Causal seed is not complete');
+  assert.ok(Number.isSafeInteger(seed.next) && seed.next > 0 && Number.isFinite(seed.asOf) && hash.test(seed.hash) && seed.missing === 0, 'Causal seed is not complete');
+  assert.ok(Array.isArray(seed.recent) && seed.recent.every((t: any) => Number.isFinite(t) && t <= seed.asOf), 'Invalid recent launch history');
   for (const field of ['launches', 'graduations']) assert.ok(Array.isArray(seed[field]) && seed[field].every((r: any) => address.test(r[0]) && Number.isSafeInteger(r[1]) && r[1] >= 0));
   assert.ok(Array.isArray(seed.exemptions) && seed.exemptions.every((a: string) => address.test(a)));
   return seed;
 }
+export async function loadSeed(path = bundledSeed): Promise<Seed> { return validateSeed(await readJson(path)); }
 export async function atomicSave(path: string, value: unknown) {
   const target = resolve(path); await mkdir(dirname(target), { recursive: true });
   const bytes = Buffer.from(stringify(value));

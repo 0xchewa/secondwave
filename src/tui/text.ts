@@ -11,13 +11,15 @@ export function price(n: number | string | null, full = false) {
   if (n === null || n === undefined || !Number.isFinite(Number(n))) return '--';
   if (full && typeof n === 'string') return n;
   const v = Number(n); if (!v) return '0';
-  const fixed = v.toLocaleString('en-US', { useGrouping: false, maximumFractionDigits: 36 });
+  const [mantissa, exponentText] = v.toExponential().split('e');
+  const exponent = Number(exponentText), digits = mantissa.replace('.', '');
+  const fixed = exponent < 0 ? '0.' + '0'.repeat(-exponent - 1) + digits : v.toLocaleString('en-US', { useGrouping: false, maximumFractionDigits: 36 });
   if (full) return fixed;
   const zeros = fixed.match(/^0\.(0{3,})([1-9]\d*)$/);
   if (zeros) return `0.0{${zeros[1].length}}${zeros[2].slice(0, 4)}`;
   if (v >= 1000000) return `${(v / 1000000).toFixed(2)}m`;
   if (v >= 1000) return `${(v / 1000).toFixed(2)}k`;
-  return v >= 1 ? v.toFixed(3).replace(/\.?0+$/, '') : v.toPrecision(4).replace(/0+$/, '').replace(/\.$/, '');
+  return v >= 1 ? v.toFixed(3).replace(/\.?0+$/, '') : v.toFixed(Math.min(100, -exponent + 3)).replace(/0+$/, '').replace(/\.$/, '');
 }
 export const age = (from: number, now: number) => {
   const seconds = Math.max(0, now - from);

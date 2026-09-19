@@ -66,6 +66,20 @@ export async function collectPage(input: LocalState, rpc: RpcReader,
   const launches = new Map(seed.launches), grads = new Map(seed.graduations), exemptions = new Set(seed.exemptions);
   const markets = new Map(session.markets.map(m => [m.address, m]));
   const headers = new Map<number, any>([[to, boundary]]), receipts = new Map<string, any>();
+  async function preloadHeaders(events: any[]) {
+    if (!rpc.batch) return;
+    const numbers = [...new Set(events.map(l => num(l.blockNumber)))].filter(n => !headers.has(n));
+    for (let i = 0; i < numbers.length; i += 10) {
+      const batch = numbers.slice(i, i + 10);
+      try {
+        const results = await rpc.batch(batch.map(n => ({ method: 'eth_getBlockByNumber', params: [hex(n), false] })));
+        results.forEach((b, j) => { assert.ok(b?.hash && num(b.number) === batch[j], 'RPC_HEADER_BATCH_MISMATCH'); headers.set(batch[j], b); });
+      } catch (e) {
+        if (e instanceof RpcError && e.code === 'RPC_BATCH_UNSUPPORTED') return;
+        throw e;
+      }
+    }
+  }
   async function header(n: number) {
     if (!headers.has(n)) headers.set(n, await rpc.call('eth_getBlockByNumber', [hex(n), false]));
     const b = headers.get(n); assert.ok(b?.hash, 'RPC_HEADER_MISSING'); return b;
@@ -86,6 +100,7 @@ export async function collectPage(input: LocalState, rpc: RpcReader,
     assert.ok(d.exists && d.token.toLowerCase() === token, 'FACTORY_TOKEN_MISMATCH'); return d;
   }
   const factoryLogs = await logs(rpc, { address: FACTORY, topics: [[launchTopic, migrationTopic]] }, from, to);
+  await preloadHeaders(factoryLogs);
   for (const log of factoryLogs) {
     const ts = await canonical(log), r = await receipt(log.transactionHash, log);
     const event = decodeEventLog({ abi: factoryAbi, topics: log.topics, data: log.data, strict: true }) as any;
@@ -138,7 +153,9 @@ export async function collectPage(input: LocalState, rpc: RpcReader,
   const byPool = new Map(watched.map(m => [m.pool!.id, m]));
   for (let i = 0; i < watched.length; i += 32) {
     const batch = watched.slice(i, i + 32), ids = batch.map(m => m.pool!.id);
-    for (const log of await logs(rpc, { address: POOL_MANAGER, topics: [swapTopic, ids] }, from, to)) {
+    const poolLogs = await logs(rpc, { address: POOL_MANAGER, topics: [swapTopic, ids] }, from, to);
+    await preloadHeaders(poolLogs);
+    for (const log of poolLogs) {
       const m = byPool.get(log.topics[1]); assert.ok(m, 'UNREQUESTED_POOL');
       const ts = await canonical(log), a = (decodeEventLog({ abi: poolAbi, topics: log.topics, data: log.data, strict: true }) as any).args;
       const is0 = m.pool!.currency0 === m.address, amount = is0 ? a.amount0 : a.amount1, quote = is0 ? a.amount1 : a.amount0;
@@ -165,11 +182,19 @@ export async function collectPage(input: LocalState, rpc: RpcReader,
   onProgress({ phase: 'CURVE TAPE', from, to, head });
   const curves = session.markets.filter(m => m.phase === 'curve' && m.quoteAddress === ZERO && /^0x[0-9a-f]{40}$/.test(m.curve)).slice(0, 64);
   const byCurve = new Map(curves.map(m => [m.curve, m]));
-  if (curves.length) for (const log of await logs(rpc, { address: curves.map(m => m.curve), topics: [[buyTopic, sellTopic]] }, from, to)) {
+  const curveLogs = curves.length ? await logs(rpc, { address: curves.map(m => m.curve), topics: [[buyTopic, sellTopic]] }, from, to) : [];
+  await preloadHeaders(curveLogs);
+  for (const log of curveLogs) {
     const m = byCurve.get(log.address.toLowerCase()); assert.ok(m, 'UNREQUESTED_CURVE');
     const ts = await canonical(log), event = decodeEventLog({ abi: curveAbi, topics: log.topics, data: log.data, strict: true }) as any;
     const a = event.args, buy = event.eventName === 'CurveBuy';
     m.priceQuote = tradePrice(buy ? a.quoteIn : a.quoteOut, buy ? a.tokensOut : a.tokensIn, 18, 18); m.priceAt = ts;
+    (m.tape ??= []).push({ ts, block: num(log.blockNumber), log: num(log.logIndex), hash: log.blockHash, tx: log.transactionHash,
+      price: m.priceQuote === null ? null : Number(m.priceQuote), quoteRaw: String(buy ? a.quoteIn : a.quoteOut), side: buy ? 'buy' : 'sell', actor: null });
+  }
+  for (const m of curves) {
+    m.tape = (m.tape ?? []).filter(t => t.ts > at - 600).slice(-1000);
+    m.coverage = mergeCoverage([...m.coverage, { fromBlock: BigInt(Math.max(from, m.launchBlock)), toBlock: BigInt(to), fromTime: Math.max(seed.asOf, m.launchedAt), toTime: at }]);
   }
   // Historical reserve reads are explicit. An RPC that lacks this state leaves progress unknown.
   for (const m of curves.slice(0, 8)) {
