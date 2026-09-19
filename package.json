@@ -4,15 +4,25 @@
   "private": true,
   "description": "A local research terminal for Early Signal and Second Wave on Robinhood Chain",
   "type": "module",
-  "engines": { "node": ">=22.12.0 <25" },
+  "engines": {
+    "node": ">=22.12.0 <25"
+  },
   "scripts": {
     "start": "tsx src/cli.ts",
     "check": "tsc --noEmit",
     "build": "tsc",
     "test": "tsx --test test/*.test.ts",
     "bench": "tsx src/cli.ts bench",
-    "models": "tsx src/cli.ts models"
+    "models": "tsx src/cli.ts models",
+    "audit:release": "node scripts/audit-release.mjs"
   },
-  "dependencies": { "tsx": "4.23.13", "viem": "2.56.5" },
-  "devDependencies": { "@types/node": "22.20.2", "typescript": "6.0.3" }
+  "dependencies": {
+    "tsx": "4.23.13",
+    "viem": "2.56.5"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.63.0",
+    "@types/node": "22.20.2",
+    "typescript": "6.0.3"
+  }
 }
