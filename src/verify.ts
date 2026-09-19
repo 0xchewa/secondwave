@@ -3,7 +3,6 @@ import { loadSession, verifyBundledData } from './session.js';
 import { scoreMarket } from './models.js';
 import { earlyArtifact, peakArtifact } from './models.js';
 import { rawScore, predict, contributions } from './engines/early/vendor/gbdt.js';
-import { featureRow } from './engines/early/vendor/features.js';
 import { readFile } from 'node:fs/promises';
 export async function bench() {
   const record = await verifyBundledData(), session = await loadSession();

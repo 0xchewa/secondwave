@@ -2,9 +2,9 @@
 
 <p align="center"><sub>by <a href="https://x.com/0xchewa">0xchewa</a></sub></p>
 
-<p align="center"><a href="https://github.com/0xchewa/secondwave/actions/workflows/ci.yml"><img src="docs/github/badges/tests.svg" alt="34 public console tests passed on 19 September 2026"></a> <img src="docs/github/badges/engines.svg" alt="Early Signal and Second Wave"> <img src="docs/github/badges/node.svg" alt="Node 22.x"> <img src="docs/github/badges/chain.svg" alt="Robinhood Chain mainnet 4663"> <img src="docs/github/badges/stack.svg" alt="TypeScript, RPC, local inference"></p>
+<p align="center"><a href="https://github.com/0xchewa/secondwave/actions/workflows/ci.yml"><img src="docs/github/badges/tests.svg" alt="35 public console tests passed on 19 September 2026"></a> <img src="docs/github/badges/engines.svg" alt="Early Signal and Second Wave"> <img src="docs/github/badges/node.svg" alt="Node 22.x"> <img src="docs/github/badges/chain.svg" alt="Robinhood Chain mainnet 4663"> <img src="docs/github/badges/stack.svg" alt="TypeScript, RPC, local inference"></p>
 
-<p align="center"><a href="#run-it-locally"><b>RUN THE DESK ?</b></a> &nbsp; / &nbsp; <a href="#second-wave--read-the-structure">THE METHOD</a> &nbsp; / &nbsp; <a href="#open-the-model-desk">MODEL RECORD</a> &nbsp; / &nbsp; <a href="docs/README.md">FIELD MANUAL</a></p>
+<p align="center"><a href="#run-it-locally"><b>RUN THE DESK ↓</b></a> &nbsp; / &nbsp; <a href="#second-wave--read-the-structure">THE METHOD</a> &nbsp; / &nbsp; <a href="#open-the-model-desk">MODEL RECORD</a> &nbsp; / &nbsp; <a href="docs/README.md">FIELD MANUAL</a></p>
 
 ## You still have the chart open
 
@@ -23,7 +23,7 @@ npm ci
 npm start
 ```
 
-Windows Terminal, macOS and Linux ? Node 22.x ? Press **?** for controls
+Windows Terminal, macOS and Linux · Node 22.x · Press **?** for controls
 
 ### Pick a rabbit hole
 
@@ -92,14 +92,14 @@ The original Wave24 feature set and scenario-aware candidate are separate versio
 
 <img src="docs/github/console-desk.gif" alt="Actual console renderer: Second Wave scenarios, Early Signal ranks and the local model desk" width="100%">
 
-<sub>Recorded inputs from 19 September 2026, calculated locally. [Wave](docs/github/console-wave.png) ? [Early](docs/github/console-early.png) ? [Models](docs/github/console-models.png) ? [Capture record](docs/github/console-capture.json)</sub>
+<sub>Recorded inputs from 19 September 2026, calculated locally. [Wave](docs/github/console-wave.png) · [Early](docs/github/console-early.png) · [Models](docs/github/console-models.png) · [Capture record](docs/github/console-capture.json)</sub>
 
 A compact feed and an inspection pane keep the market and its context together. Read stage, age, quote price, target, invalidation and observed **60-second sell pressure**. The inspector connects those values to the retained trade path and the model's explanations. Small terminal? Press Enter to open the inspector across the screen.
 
 | Key | Action | Key | Action |
 |:---|:---|:---|:---|
 | `1` / `2` / `3` | Early / Wave / models | `/` | Search symbol or contract |
-| `?` / `?` or `j` / `k` | Select a token | `s` / `f` | Sort / filter |
+| `↑` / `↓` or `j` / `k` | Select a token | `s` / `f` | Sort / filter |
 | `Enter` | Open the inspector | `e` | Export the selected calculation |
 | `l` | Start RPC collection | `?` / `q` | Controls / quit |
 
@@ -268,7 +268,7 @@ npm start -- --input .local/session.json.gz
 npm start -- snapshot --mode early --json
 ```
 
-[Controls, RPC troubleshooting and recovery](docs/RUN_IT.md) ? [Official Robinhood Chain connection details](https://docs.robinhood.com/chain/connecting/)
+[Controls, RPC troubleshooting and recovery](docs/RUN_IT.md) · [Official Robinhood Chain connection details](https://docs.robinhood.com/chain/connecting/)
 
 ### The verification bench
 
@@ -279,7 +279,7 @@ npm test
 npm run bench
 ```
 
-The dated badge records **34 public-console tests** passed on 19 September 2026. Checks cover frozen numerical outputs, resumed Wave scenarios, missing history, quote decimals, canonical ordering, reorg rejection, interrupted RPC reads, atomic state, terminal dimensions and unsafe terminal text. Synthetic cases are explicitly named. CI runs on Windows and Linux.
+The dated badge records **35 public-console tests** passed on 19 September 2026. Checks cover frozen numerical outputs, resumed Wave scenarios, missing history, quote decimals, canonical ordering, reorg rejection, interrupted RPC reads, atomic state, terminal dimensions and unsafe terminal text. Synthetic cases are explicitly named. CI runs on Windows and Linux.
 
 <details>
 <summary><b>Rebuild the visual research desk</b></summary>
@@ -307,7 +307,7 @@ scripts/            evidence playback and original research animations
 docs/               field manual, methodology and data provenance
 ```
 
-[Documentation index](docs/README.md) ? [Current status](docs/STATUS.md) ? [Publication scope](NOTICE.md) ? [Third-party notices](THIRD_PARTY_NOTICES.md)
+[Documentation index](docs/README.md) · [Current status](docs/STATUS.md) · [Publication scope](NOTICE.md) · [Third-party notices](THIRD_PARTY_NOTICES.md)
 
 ---
 

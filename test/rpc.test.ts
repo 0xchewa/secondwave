@@ -7,6 +7,12 @@ import { Rpc, RpcError, hex, type RpcReader } from '../src/chain/rpc.js';
 import { collectPage, logs } from '../src/chain/collect.js';
 import { commitState, readState, stateLock, type LocalState } from '../src/chain/state.js';
 import { safeError } from '../src/tui/app.js';
+import { encodeEventTopics, encodeAbiParameters, encodeFunctionData } from 'viem';
+import { FACTORY } from '../src/chain/collect.js';
+import { factoryAbi } from '../src/chain/abi.js';
+import { routerAbi, PONS_ROUTER } from '../src/chain/launch.js';
+import { ZERO } from '../src/domain.js';
+import { FEATURES } from '../src/engines/early/vendor/features.js';
 const hash = '0x' + 'a'.repeat(64), changed = '0x' + 'b'.repeat(64);
 function state(): LocalState { return {
   format: 'secondwave-state-v1', seed: { format: 'secondwave-seed-v1', chainId: 4663, next: 11, hash, asOf: 1010, missing: 0, recent: [], launches: [], graduations: [], exemptions: [] },
@@ -46,6 +52,29 @@ test('empty canonical page commits and resumes without skipping a block', async 
   assert.equal(first.state.seed.next, 16); assert.equal(first.state.session.block, 15);
   const second = await collectPage(first.state, new FakeRpc(), undefined, { blocks: 5 });
   assert.equal(second.state.seed.next, 21); assert.equal(second.state.session.source, 'rpc');
+});
+
+test('a canonical launch computes features before advancing caller history (synthetic)', async () => {
+  const token = '0x' + '1'.repeat(40), curve = '0x' + '2'.repeat(40), caller = '0x' + '3'.repeat(40), txHash = '0x' + '4'.repeat(64);
+  const initial = state(); initial.seed.launches = [[caller, 2]]; initial.seed.graduations = [[caller, 1]]; initial.seed.exemptions = [caller]; initial.seed.recent = [1009];
+  const log = { address: FACTORY, blockNumber: '0xb', blockHash: hash, transactionHash: txHash, logIndex: '0x0',
+    topics: encodeEventTopics({ abi: factoryAbi, eventName: 'TokenLaunched', args: { token: token as `0x${string}`, curve: curve as `0x${string}`, deployer: caller as `0x${string}` } }),
+    data: encodeAbiParameters([{ type: 'address' }, { type: 'uint256' }, { type: 'uint256' }], [ZERO as `0x${string}`, 1n, 10n ** 18n]) };
+  const calldata = encodeFunctionData({ abi: routerAbi, functionName: 'launchAndBuy', args: [{ name: 'Synthetic case', symbol: 'TEST', logo: '', description: 'Explicit test fixture', socials: { twitter: '', telegram: '', discord: '', website: '', farcaster: '' }, creatorFeeRecipient: caller as `0x${string}`, creatorTaxBps: 100, buybackEnabled: false, expectedEconomics: hash as `0x${string}`, salt: hash as `0x${string}` }, 1n, ZERO as `0x${string}`, 10n ** 16n, 0n, caller as `0x${string}`, [caller as `0x${string}`]] });
+  const base = new FakeRpc();
+  const rpc: RpcReader = { async call<T>(method: string, params: any[] = []): Promise<T> {
+    if (method === 'eth_getLogs') return (params[0].address === FACTORY ? [log] : []) as T;
+    if (method === 'eth_getTransactionReceipt') return { status: '0x1', blockHash: hash, logs: [log] } as T;
+    if (method === 'eth_getTransactionByHash') return { from: caller, to: PONS_ROUTER, input: calldata, blockHash: hash } as T;
+    if (method === 'eth_call') return encodeAbiParameters([{ type: 'uint256' }], [5n * 10n ** 17n]) as T;
+    return base.call<T>(method, params);
+  } };
+  const result = await collectPage(initial, rpc, undefined, { blocks: 1 });
+  const m = result.state.session.markets[0], x = m.featureSnapshot!;
+  assert.equal(m.symbol, 'TEST'); assert.equal(m.curveProgress, 50);
+  assert.equal(x[FEATURES.indexOf('dev_prior_launches')], 2); assert.equal(x[FEATURES.indexOf('dev_prior_graduations')], 1);
+  assert.equal(x[FEATURES.indexOf('exempt_seen_before')], 1); assert.equal(x[FEATURES.indexOf('launches_prior_hour')], 1);
+  assert.equal(new Map(result.state.seed.launches).get(caller), 3); assert.equal(new Map(initial.seed.launches).get(caller), 2);
 });
 test('atomic persisted checkpoint survives a fresh process-style reload', async () => {
   const dir = await mkdtemp(join(tmpdir(), 'secondwave-test-'));
