@@ -1,0 +1,31 @@
+{
+  "verifiedAt": "2026-09-19",
+  "chainId": 4663,
+  "engines": {
+    "early": {
+      "sha256": "ce13393e92af5d939493b3068d42fde151b389d27670eb8b94b5ab0c51011745",
+      "version": "early-augur-causal-1b9a1cf0b4be",
+      "probabilityEnabled": false
+    },
+    "wave": {
+      "sha256": "ec99a299d3750728e88afd34ed5cf453a1d9b658fd185f49c2a255a4d7771f41",
+      "version": "wave24-174b4c3205be",
+      "probabilityEnabled": false
+    },
+    "peak": {
+      "sha256": "50f93aa8be4aef18ceccf14322e212ae8539283070394757cd3fc455de8713db",
+      "version": "peak-range-50f93aa8be4a-v1",
+      "probabilityEnabled": false
+    }
+  },
+  "sourceFiles": {
+    "src/engines/early/vendor/features.ts": "0fe7412f14ca82c02f0e8cf9afcce4964180e5bd2203749332ab4791d87ca01c",
+    "src/engines/early/vendor/gbdt.ts": "d4e670905d3fbefc45099d316ffe33557ed14dcb88f9df2807061c6eb3626491",
+    "src/engines/early/vendor/reasons.ts": "1a5c4ba2233e65b9e9c971518390f92015610fc9c1418b3e4e17fb66014b3b3d",
+    "src/engines/wave/config.ts": "7b1d6f6f04b735536bbb34723b40525309fd11e7d1f08f249892be599559dd47",
+    "src/engines/wave/detector.ts": "ea5b36f3cd9232f09ecf99dfa9de5b679d72029d6b33f8959b4f57438f7024a8",
+    "src/engines/wave24/engine.ts": "7eb1f85b5f4cb7c4581a4a3ba9f5a2b0fea803e168d17b1876e1f41a0ca92e72",
+    "src/engines/wave24/scenario-features.ts": "d8c77336fc3169d81f2094a23fe3ba5424a8214998b53e1128a5fe3aac0d4114",
+    "src/engines/early/sigmoid.ts": "251be25c5dce2cd5c700ace091b41df25d55364ff69951bdc4444dd9c5bef55c"
+  }
+}

@@ -1,0 +1,36 @@
+export const WAVE = {
+  task: 'second_wave',
+  version: 'pool-recovery-60m-v1',
+  featureVersion: 'pool-flow-5m-v1',
+  detectorVersion: 'first-pool-rise-spaced-v1',
+  horizon: 3600,
+  downside: 0.25,
+  rise: 0.5,
+  pullback: 0.2,
+  maxPullback: 0.5,
+  minPeakAge: 30,
+  history: 300,
+  minTrades: 6,
+  confirmations: 3,
+  confirmationSpan: 10,
+  confirmationWindow: 120,
+  sampleSpacing: 5,
+  cadence: 30,
+  entryWindow: 7200,
+} as const;
+export const WAVE_FEATURES = [
+  'rise_multiple',
+  'drawdown',
+  'seconds_since_peak',
+  'seconds_since_migration',
+  'return_60s',
+  'buys_60s',
+  'sells_60s',
+  'sell_share_60s',
+  'volume_60s_share_300s',
+  'sell_activity_change',
+  'largest_sell_trade_share',
+  'trades_300s',
+] as const;
+export const LABELS = ['recovery_first', 'downside_first', 'neither'] as const;
+export type WaveLabel = (typeof LABELS)[number];
