@@ -9,6 +9,7 @@ import { decodeLaunch } from './launch.js';
 import { poolPrice, poolSide, tradePrice } from './math.js';
 import { hex, num, RpcError, type RpcReader } from './rpc.js';
 import type { LocalState } from './state.js';
+import { appendTrade, extendBarCoverage, mergeBar } from '../market.js';
 
 export const FACTORY = '0x7ed598bcef8bd9edd8c97a195c6d13f40801ec7e';
 export const POOL_MANAGER = '0x8366a39cc670b4001a1121b8f6a443a643e40951';
@@ -19,12 +20,13 @@ const swapTopic = toEventSelector('Swap(bytes32,address,int128,int128,uint160,ui
 const initTopic = toEventSelector('Initialize(bytes32,address,address,uint24,int24,address,uint160,int24)');
 const buyTopic = toEventSelector('CurveBuy(address,address,uint256,uint256,uint256,uint256)');
 const sellTopic = toEventSelector('CurveSell(address,address,uint256,uint256,uint256,uint256)');
+const buybackTopic = toEventSelector('BuybackLocked(uint256,uint256)');
 const order = (a: any, b: any) => num(a.blockNumber) - num(b.blockNumber) || num(a.logIndex) - num(b.logIndex);
 
 /** Page bounded logs. A dense response is split; no silent first-page truncation. */
 export async function logs(rpc: RpcReader, filter: any, from: number, to: number): Promise<any[]> {
   let result: any[];
-  try { result = await rpc.call('eth_getLogs', [{ ...filter, fromBlock: hex(from), toBlock: hex(to) }]); }
+  try { result = rpc.readLogs ? await rpc.readLogs(filter, from, to) : await rpc.call('eth_getLogs', [{ ...filter, fromBlock: hex(from), toBlock: hex(to) }]); }
   catch (e) {
     if (e instanceof RpcError && ['RPC_RESPONSE_-32005', 'RPC_RESPONSE_-32002'].includes(e.code) && from < to) {
       const mid = Math.floor((from + to) / 2);
@@ -33,7 +35,7 @@ export async function logs(rpc: RpcReader, filter: any, from: number, to: number
     throw e;
   }
   assert.ok(Array.isArray(result), 'RPC_LOGS_NOT_ARRAY');
-  if (result.length >= 1000) {
+  if (!rpc.readLogs && result.length >= 1000) {
     if (from === to) throw new RpcError('RPC_DENSE_BLOCK_REQUIRES_UNTRUNCATED_PROVIDER');
     const mid = Math.floor((from + to) / 2);
     return [...await logs(rpc, filter, from, mid), ...await logs(rpc, filter, mid + 1, to)];
@@ -42,6 +44,9 @@ export async function logs(rpc: RpcReader, filter: any, from: number, to: number
   for (const log of result) {
     const key = `${log.blockNumber}:${log.logIndex}`;
     assert.ok(!log.removed && num(log.blockNumber) >= from && num(log.blockNumber) <= to && !seen.has(key), 'RPC_NONCANONICAL_OR_DUPLICATE_LOG');
+    const addresses: string[] = filter.address == null ? [] : Array.isArray(filter.address) ? filter.address : [filter.address];
+    assert.ok(!addresses.length || addresses.some(a => a.toLowerCase() === log.address?.toLowerCase()), 'RPC_UNREQUESTED_LOG_ADDRESS');
+    assert.ok((filter.topics ?? []).every((t: any, i: number) => t == null || (Array.isArray(t) ? t : [t]).some((v: string) => v.toLowerCase() === log.topics?.[i]?.toLowerCase())), 'RPC_UNREQUESTED_LOG_TOPIC');
     seen.add(key);
   }
   return result.sort(order);
@@ -49,6 +54,7 @@ export async function logs(rpc: RpcReader, filter: any, from: number, to: number
 export type SyncProgress = { phase: string; from: number; to: number; head: number; detail?: string };
 export async function collectPage(input: LocalState, rpc: RpcReader,
   onProgress: (p: SyncProgress) => void = () => {}, options: { blocks?: number; poolLimit?: number } = {}) {
+  rpc.reset?.();
   assert.equal(num(await rpc.call('eth_chainId')), CHAIN_ID, 'WRONG_CHAIN: use Robinhood Chain mainnet 4663');
   const head = num(await rpc.call('eth_blockNumber')) - 20;
   const from = input.seed.next;
@@ -56,7 +62,7 @@ export async function collectPage(input: LocalState, rpc: RpcReader,
   const anchor = await rpc.call('eth_getBlockByNumber', [hex(from - 1), false]);
   assert.ok(anchor && anchor.hash === input.seed.hash, 'REORG_OR_ARCHIVE_UNAVAILABLE: checkpoint retained; use a canonical seed');
   if (head < from) return { state: input, caughtUp: true, advanced: false, head };
-  const to = Math.min(head, from + (options.blocks ?? 1000) - 1);
+  const to = Math.min(head, from + (options.blocks ?? rpc.suggestedBlocks ?? 1000) - 1);
   const boundary = await rpc.call('eth_getBlockByNumber', [hex(to), false]);
   assert.ok(boundary?.hash, 'RPC_BOUNDARY_MISSING');
   const at = num(boundary.timestamp);
@@ -119,7 +125,8 @@ export async function collectPage(input: LocalState, rpc: RpcReader,
       markets.set(token, { address: token, name: detail.declaration?.name ?? null, symbol: detail.declaration?.symbol ?? null,
         launchedAt: ts, launchBlock: num(log.blockNumber), phase: 'curve', curve: a.curve.toLowerCase(), thresholdRaw: String(a.graduationThreshold),
         quoteAddress: quote, quoteSymbol: quote === ZERO ? 'ETH' : null, quoteDecimals: quote === ZERO ? 18 : null, decimals: 18,
-        featureSnapshot: x, priceQuote: null, priceAt: null, curveProgress: null, coverage: [] });
+        featureSnapshot: x, priceQuote: null, priceAt: null, curveProgress: 0, reserveRaw: '0', reserveAt: ts, coverage: [], bars: [], barCoverage: [], launchTx: log.transactionHash,
+        launchFacts: { creator: caller, sender: detail.row.launch_sender, initialBuyRaw: detail.row.initial_buy_wei, creatorTaxBps: detail.row.creator_tax_bps, priorLaunches: x[16], priorMigrations: x[17] } });
     } else {
       const d = await declaration(token, log.blockNumber), caller = d.deployer.toLowerCase();
       grads.set(caller, (grads.get(caller) ?? 0) + 1);
@@ -140,19 +147,21 @@ export async function collectPage(input: LocalState, rpc: RpcReader,
       }
     }
   }
-  // Scope limits are visible in the manual: recent launches + a bounded market watch set.
-  session.markets = [...markets.values()].filter(m => at - m.launchedAt < 72 * 3600 || m.history && at - m.history.migratedAt < 72 * 3600)
-    .sort((a, b) => b.launchedAt - a.launchedAt).slice(0, 1000);
+  // Keep the whole recent catalogue. No first-1000/first-64 truncation of Early.
+  session.markets = [...markets.values()].filter(m => m.pinned || at - m.launchedAt < 72 * 3600 || m.history && at - m.history.migratedAt < 72 * 3600)
+    .sort((a, b) => b.launchedAt - a.launchedAt);
+  assert.ok(session.markets.length <= 100000, 'LOCAL_MARKET_BUDGET_EXCEEDED');
   const watched = session.markets.filter(m => m.pool && m.history && m.quoteAddress === ZERO)
-    .sort((a, b) => b.history!.migratedAt - a.history!.migratedAt).slice(0, options.poolLimit ?? 128);
+    .sort((a, b) => b.history!.migratedAt - a.history!.migratedAt).slice(0, options.poolLimit ?? 512);
   const watchedAddresses = new Set(watched.map(m => m.address));
   for (const m of session.markets) if (m.pool && !watchedAddresses.has(m.address)) {
-    m.terminalGate = { state: 'insufficient_history', reason: 'Outside the local 128-pool watch budget; coverage is not extended' };
+    m.terminalGate = { state: 'insufficient_history', reason: 'Outside the 512-pool watch budget; coverage is not extended' };
   }
   onProgress({ phase: 'POOL FLOW', from, to, head });
   const byPool = new Map(watched.map(m => [m.pool!.id, m]));
-  for (let i = 0; i < watched.length; i += 32) {
-    const batch = watched.slice(i, i + 32), ids = batch.map(m => m.pool!.id);
+  const poolBatch = rpc.readLogs ? 512 : 32;
+  for (let i = 0; i < watched.length; i += poolBatch) {
+    const batch = watched.slice(i, i + poolBatch), ids = batch.map(m => m.pool!.id);
     const poolLogs = await logs(rpc, { address: POOL_MANAGER, topics: [swapTopic, ids] }, from, to);
     await preloadHeaders(poolLogs);
     for (const log of poolLogs) {
@@ -165,11 +174,13 @@ export async function collectPage(input: LocalState, rpc: RpcReader,
       m.history!.ticks.push({ ts, block: num(log.blockNumber), log: num(log.logIndex), hash: log.blockHash, tx: log.transactionHash,
         price: price === null ? null : Number(price), quoteRaw: String(quote < 0n ? -quote : quote), side: poolSide(amount), actor: null });
       m.priceQuote = price; m.priceAt = ts;
+      appendTrade(m, { ts, block: num(log.blockNumber), log: num(log.logIndex), price, quoteRaw: String(quote < 0n ? -quote : quote), side: poolSide(amount) });
     }
   }
   for (const m of watched) {
     const h = m.history!;
     m.coverage = mergeCoverage([...m.coverage, { fromBlock: BigInt(Math.max(from, h.migrationBlock)), toBlock: BigInt(to), fromTime: Math.max(seed.asOf, h.migratedAt), toTime: at }]);
+    extendBarCoverage(m, Math.max(from, h.migrationBlock), to, Math.max(seed.asOf, h.migratedAt), at);
     if (h.ticks.length > 12000 && !m.checkpoint) {
       m.terminalGate = { state: 'insufficient_history', reason: 'Local 12000-event detector prefix budget exceeded' };
     }
@@ -177,42 +188,66 @@ export async function collectPage(input: LocalState, rpc: RpcReader,
       const result = replay(h, m.coverage, at, m.checkpoint);
       m.checkpoint = result.checkpoint;
     }
-    if (m.checkpoint || m.terminalGate) h.ticks = h.ticks.filter(t => t.ts > at - 600).slice(-12000);
+    if (m.checkpoint || m.terminalGate) {
+      const tail = h.ticks.filter(t => t.ts > at - 600);
+      if (tail.length > 12000) m.pressureHistoryFrom = Math.max(m.pressureHistoryFrom ?? 0, tail[tail.length - 12000].ts);
+      h.ticks = tail.slice(-12000);
+    }
   }
   onProgress({ phase: 'CURVE TAPE', from, to, head });
-  const curves = session.markets.filter(m => m.phase === 'curve' && m.quoteAddress === ZERO && /^0x[0-9a-f]{40}$/.test(m.curve)).slice(0, 64);
+  // Include the pre-migration part of markets that migrate inside this page.
+  const curves = session.markets.filter(m => (m.phase === 'curve' || m.history && m.history.migrationBlock >= from) && m.quoteAddress === ZERO && /^0x[0-9a-f]{40}$/.test(m.curve));
   const byCurve = new Map(curves.map(m => [m.curve, m]));
-  const curveLogs = curves.length ? await logs(rpc, { address: curves.map(m => m.curve), topics: [[buyTopic, sellTopic]] }, from, to) : [];
+  const curveLogs = curves.length ? await logs(rpc, { topics: [[buyTopic, sellTopic, buybackTopic]] }, from, to) : [];
   await preloadHeaders(curveLogs);
   for (const log of curveLogs) {
-    const m = byCurve.get(log.address.toLowerCase()); assert.ok(m, 'UNREQUESTED_CURVE');
+    const m = byCurve.get(log.address.toLowerCase()); if (!m) continue; // Never trust an unverified contract emitting the same event signature.
     const ts = await canonical(log), event = decodeEventLog({ abi: curveAbi, topics: log.topics, data: log.data, strict: true }) as any;
     const a = event.args, buy = event.eventName === 'CurveBuy';
-    m.priceQuote = tradePrice(buy ? a.quoteIn : a.quoteOut, buy ? a.tokensOut : a.tokensIn, 18, 18); m.priceAt = ts;
+    if (event.eventName === 'BuybackLocked') { if (m.reserveRaw != null) m.reserveRaw = String(BigInt(m.reserveRaw) + a.quoteSpent); continue; }
+    if (m.reserveRaw != null) m.reserveRaw = String(BigInt(m.reserveRaw) + (buy ? BigInt(a.quoteIn) - BigInt(a.fee) - BigInt(a.tax) : -(BigInt(a.quoteOut) + BigInt(a.fee) + BigInt(a.tax))));
+    const price = tradePrice(buy ? a.quoteIn : a.quoteOut, buy ? a.tokensOut : a.tokensIn, 18, 18);
+    if (ts >= (m.priceAt ?? -1)) { m.priceQuote = price; m.priceAt = ts; }
     (m.tape ??= []).push({ ts, block: num(log.blockNumber), log: num(log.logIndex), hash: log.blockHash, tx: log.transactionHash,
-      price: m.priceQuote === null ? null : Number(m.priceQuote), quoteRaw: String(buy ? a.quoteIn : a.quoteOut), side: buy ? 'buy' : 'sell', actor: null });
+      price: price === null ? null : Number(price), quoteRaw: String(buy ? a.quoteIn : a.quoteOut), side: buy ? 'buy' : 'sell', actor: null });
+    appendTrade(m, { ts, block: num(log.blockNumber), log: num(log.logIndex), price, quoteRaw: String(buy ? a.quoteIn : a.quoteOut), side: buy ? 'buy' : 'sell' });
   }
   for (const m of curves) {
     m.tape = (m.tape ?? []).filter(t => t.ts > at - 600).slice(-1000);
     m.coverage = mergeCoverage([...m.coverage, { fromBlock: BigInt(Math.max(from, m.launchBlock)), toBlock: BigInt(to), fromTime: Math.max(seed.asOf, m.launchedAt), toTime: at }]);
+    extendBarCoverage(m, Math.max(from, m.launchBlock), to, Math.max(seed.asOf, m.launchedAt), Math.min(at, m.history?.migratedAt ?? at));
+    if (m.phase === 'curve' && m.reserveRaw != null) {
+      m.curveProgress = BigInt(m.thresholdRaw) > 0n && BigInt(m.reserveRaw) >= 0n ? Math.min(100, Number(BigInt(m.reserveRaw) * 10n ** 12n / BigInt(m.thresholdRaw)) / 1e10) : null;
+      m.reserveAt = at;
+    }
   }
   // Historical reserve reads are explicit. An RPC that lacks this state leaves progress unknown.
-  for (const m of curves.slice(0, 8)) {
+  for (const m of curves.filter(m => m.phase === 'curve' && m.reserveRaw == null)) {
     try {
       const result = await rpc.call('eth_call', [{ to: m.curve, data: encodeFunctionData({ abi: curveAbi, functionName: 'realQuoteReserve' }) }, hex(to)]);
       const reserve = decodeFunctionResult({ abi: curveAbi, functionName: 'realQuoteReserve', data: result as Hex });
-      m.curveProgress = BigInt(m.thresholdRaw) > 0n ? Math.min(100, Number(reserve * 10000n / BigInt(m.thresholdRaw)) / 100) : null;
+      m.reserveRaw = String(reserve); m.reserveAt = at;
+      m.curveProgress = BigInt(m.thresholdRaw) > 0n ? Math.min(100, Number(reserve * 10n ** 12n / BigInt(m.thresholdRaw)) / 1e10) : null;
     } catch (e) {
       if (e instanceof RpcError && (e.code.startsWith('RPC_ACCESS_DENIED') || e.code === 'SYNC_CANCELLED')) throw e;
       m.curveProgress = null;
     }
+  }
+  for (const m of session.markets) {
+    // Pool and curve reads can enter the same minute in opposite collection order.
+    const byMinute = new Map<number, import('../domain.js').Bar>();
+    for (const b of m.bars ?? []) {
+      if (!m.pinned && b[0] < Math.floor((at - 259200) / 60) * 60) continue;
+      byMinute.set(b[0], byMinute.has(b[0]) ? mergeBar(byMinute.get(b[0])!, b) : b);
+    }
+    m.bars = [...byMinute.values()].sort((a, b) => a[0] - b[0]);
   }
   const check = await rpc.call('eth_getBlockByNumber', [hex(to), false]);
   const startCheck = await rpc.call('eth_getBlockByNumber', [hex(from - 1), false]);
   assert.ok(check?.hash === boundary.hash && startCheck?.hash === input.seed.hash, 'REORG_BEFORE_COMMIT');
   seed.launches = [...launches]; seed.graduations = [...grads]; seed.exemptions = [...exemptions];
   seed.next = to + 1; seed.hash = boundary.hash; seed.asOf = at; seed.recent = seed.recent.filter(t => t >= at - 3600);
-  Object.assign(session, { source: 'rpc', asOf: at, block: to, hash: boundary.hash, capturedAt: new Date().toISOString() });
+  Object.assign(session, { source: 'rpc', transport: rpc.kind === 'hypersync' ? 'hypersync' : 'rpc', asOf: at, block: to, hash: boundary.hash, capturedAt: new Date().toISOString(), reorg: false });
   onProgress({ phase: 'COMMIT', from, to, head });
   return { state, caughtUp: to === head, advanced: true, head };
 }

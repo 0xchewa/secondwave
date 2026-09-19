@@ -71,7 +71,7 @@ test('a canonical launch computes features before advancing caller history (synt
   } };
   const result = await collectPage(initial, rpc, undefined, { blocks: 1 });
   const m = result.state.session.markets[0], x = m.featureSnapshot!;
-  assert.equal(m.symbol, 'TEST'); assert.equal(m.curveProgress, 50);
+  assert.equal(m.symbol, 'TEST'); assert.equal(m.curveProgress, 0); // No CurveBuy event in this explicit fixture.
   assert.equal(x[FEATURES.indexOf('dev_prior_launches')], 2); assert.equal(x[FEATURES.indexOf('dev_prior_graduations')], 1);
   assert.equal(x[FEATURES.indexOf('exempt_seen_before')], 1); assert.equal(x[FEATURES.indexOf('launches_prior_hour')], 1);
   assert.equal(new Map(result.state.seed.launches).get(caller), 3); assert.equal(new Map(initial.seed.launches).get(caller), 2);

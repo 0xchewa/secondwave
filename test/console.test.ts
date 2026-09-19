@@ -22,8 +22,8 @@ test('search finds any recorded contract, independent of visible rows', () => {
 test('sorting and filters are deterministic and preserve missing values', () => {
   const s = initialDesk(); s.filter = 1;
   assert.ok(visibleRows(rows, s).every(r => r.wave.stage === 'ACTIVE'));
-  s.filter = 0; s.sort = 3; const list = visibleRows(rows, s);
-  assert.ok(list.every((r, i) => !i || (list[i - 1].wave.pressure ?? -1) >= (r.wave.pressure ?? -1)));
+  s.filter = 0; s.sort = 6; const list = visibleRows(rows, s);
+  assert.ok(list.every((r, i) => !i || (list[i - 1].wave.pressure ?? 2) <= (r.wave.pressure ?? 2)));
 });
 test('recorded mode is explicit and never claims live data', () => {
   const text = render(session, rows, initialDesk()).plain(); assert.ok(text.includes('RECORDED / LOCAL MODELS')); assert.ok(!text.includes('LIVE RPC'));

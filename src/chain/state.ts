@@ -3,7 +3,8 @@ import { dirname } from 'node:path';
 import { atomicSave, readJson, loadSession, loadSeed, verifyBundledData, validateSession, validateSeed } from '../session.js';
 import type { Seed, Session } from '../domain.js';
 
-export type LocalState = { format: 'secondwave-state-v1'; seed: Seed; session: Session };
+export type HistoryJob = { next: number; to: number; at: number; hash: string; market: import('../domain.js').Market };
+export type LocalState = { format: 'secondwave-state-v1'; seed: Seed; session: Session; historyJobs?: Record<string, HistoryJob> };
 export async function readState(path: string): Promise<LocalState> {
   try {
     const state = await readJson(path);
@@ -11,6 +12,10 @@ export async function readState(path: string): Promise<LocalState> {
     state.session = validateSession(state.session);
     state.seed = validateSeed(state.seed);
     if (state.seed.asOf !== state.session.asOf) throw Error('LOCAL_CHECKPOINT_TIME_MISMATCH');
+    for (const job of Object.values(state.historyJobs ?? {}) as HistoryJob[]) {
+      validateSession({ ...state.session, markets: [job.market] });
+      if (!Number.isSafeInteger(job.next) || job.next < job.market.launchBlock || job.to > state.session.block) throw Error('INVALID_HISTORY_JOB');
+    }
     return state;
   } catch (e: any) {
     if (e.code !== 'ENOENT') throw e;

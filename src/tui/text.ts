@@ -27,6 +27,7 @@ export const age = (from: number, now: number) => {
 };
 export const percent = (v: number | null) => v === null ? '--' : `${v.toFixed(1)}%`;
 export const top = (v: number | null) => v === null ? '--' : v < 0.1 ? 'TOP <0.1%' : `TOP ${v.toFixed(1)}%`;
+export const estimate = (v: number | null) => v === null ? '--' : v > 0 && v < .0001 ? '<0.01%' : `${(v * 100).toFixed(v < .1 ? 2 : 1)}%`;
 export function wrap(text: string, width: number) {
   const words = clean(text).split(/\s+/), lines: string[] = []; let line = '';
   for (let word of words) {

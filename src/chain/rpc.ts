@@ -7,6 +7,9 @@ export class RpcError extends Error {
 export interface RpcReader {
   call<T = any>(method: string, params?: unknown[]): Promise<T>;
   batch?(requests: { method: string; params: unknown[] }[]): Promise<any[]>;
+  readLogs?(filter: any, from: number, to: number): Promise<any[]>;
+  reset?(): void;
+  kind?: string; suggestedBlocks?: number; requests?: number;
 }
 export class Rpc implements RpcReader {
   requests = 0;
