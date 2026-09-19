@@ -4,10 +4,11 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import { execFileSync } from 'node:child_process';
 import { loadSession } from '../src/session.js';
 import { scoreMarket } from '../src/models.js';
+import { projectRow } from '../src/market.js';
 import { initialDesk } from '../src/tui/state.js';
 import { render } from '../src/tui/render.js';
 import { palette } from '../src/tui/canvas.js';
-const session = await loadSession(), rows = session.markets.map(m => scoreMarket(m, session.asOf));
+const session = await loadSession(), rows = session.markets.map(m => projectRow(scoreMarket(m, session.asOf), session));
 const work = '.local/console-frames', out = 'docs/github';
 await mkdir(work, { recursive: true }); await mkdir(out, { recursive: true });
 const browser = await chromium.launch({ channel: 'chrome' });
@@ -30,7 +31,7 @@ try {
       }
       return result + (text ? `<span style="${style}">${escape(text)}</span>` : '');
     }).join('\n');
-    await page.setContent(`<style>body{margin:0;padding:28px;background:#070b08;color:#e2eadb}main{border:1px solid #33432c;box-shadow:0 12px 90px #c1ff6010}header{height:34px;display:flex;align-items:center;gap:8px;background:#101b12;padding:0 14px;font:11px Consolas,monospace;color:#899480;border-bottom:1px solid #33432c}i{width:7px;height:7px;border-radius:100%;background:#33432c}i:first-child{background:#c1ff60}header span{margin-left:10px}pre{font:16px/18px Consolas,monospace;letter-spacing:0;margin:0;background:#090e0b;padding:8px 6px;white-space:pre;overflow:hidden}footer{font:10px Consolas,monospace;display:flex;justify-content:space-between;margin-top:12px;color:#74826a}</style><main><header><i></i><i></i><i></i><span>secondwave / npm start</span></header><pre>${lines}</pre></main><footer><span>ACTUAL CONSOLE RENDERER / LOCAL MODEL OUTPUT</span><span>RECORDED ${session.capturedAt.slice(0,10)} / ROBINHOOD CHAIN 4663</span></footer>`);
+    await page.setContent(`<style>body{margin:0;padding:28px;background:#070b08;color:#e2eadb}main{border:1px solid #33432c;box-shadow:0 12px 90px #c1ff6010}header{height:34px;display:flex;align-items:center;gap:8px;background:#101b12;padding:0 14px;font:11px Consolas,monospace;color:#899480;border-bottom:1px solid #33432c}i{width:7px;height:7px;border-radius:100%;background:#33432c}i:first-child{background:#c1ff60}header span{margin-left:10px}pre{font:14px/18px Consolas,monospace;letter-spacing:0;margin:0;background:#090e0b;padding:8px 6px;white-space:pre;overflow:hidden}footer{font:10px Consolas,monospace;display:flex;justify-content:space-between;margin-top:12px;color:#74826a}</style><main><header><i></i><i></i><i></i><span>secondwave / npm start -- --recorded</span></header><pre>${lines}</pre></main><footer><span>ACTUAL CONSOLE RENDERER / LOCAL MODEL OUTPUT</span><span>RECORDED ${session.capturedAt.slice(0,10)} / ROBINHOOD CHAIN 4663</span></footer>`);
     await page.screenshot({ path: `${work}/${String(frame).padStart(3, '0')}.png` });
     if (frame === 0) await page.screenshot({ path: `${out}/console-wave.png` });
     if (frame === 9) await page.screenshot({ path: `${out}/console-early.png` });

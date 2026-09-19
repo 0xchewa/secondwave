@@ -113,7 +113,7 @@ try {
   }
   await mkdir(`${out}/badges`, { recursive: true });
   for (const [name, left, right, color] of [
-    ['tests', 'TESTS', '35 PASS / 19 SEP', '#b6ff54'],
+    ['tests', 'TESTS', '52 PASS / 19 SEP', '#b6ff54'],
     ['engines', 'ENGINES', 'EARLY + WAVE', '#b6ff54'],
     ['node', 'NODE', '22.x', '#b6ff54'],
     ['chain', 'CHAIN', '4663 MAINNET', '#ba9aee'],
@@ -134,7 +134,7 @@ try {
         source: 'data/evidence.json',
         scenes: scenes.map((s) => ({ name: s.name, seconds: s.seconds })),
         waveMachine: 'Illustrated state transitions. Prices are schematic, not a market recording.',
-        tests: '35 public console tests, passed 19 September 2026',
+        tests: '52 public console tests, passed 19 September 2026',
       },
       null,
       2,

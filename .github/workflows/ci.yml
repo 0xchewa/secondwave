@@ -22,5 +22,5 @@ jobs:
       - run: npm run build
       - run: npm test
       - run: npm run bench
-      - run: node dist/cli.js snapshot --mode models
+      - run: node dist/cli.js snapshot --recorded --mode models
       - run: npm run audit:release

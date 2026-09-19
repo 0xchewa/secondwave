@@ -2,7 +2,7 @@
 
 <p align="center"><sub>by <a href="https://x.com/0xchewa">0xchewa</a></sub></p>
 
-<p align="center"><a href="https://github.com/0xchewa/secondwave/actions/workflows/ci.yml"><img src="docs/github/badges/tests.svg" alt="35 public console tests passed on 19 September 2026"></a> <img src="docs/github/badges/engines.svg" alt="Early Signal and Second Wave"> <img src="docs/github/badges/node.svg" alt="Node 22.x"> <img src="docs/github/badges/chain.svg" alt="Robinhood Chain mainnet 4663"> <img src="docs/github/badges/stack.svg" alt="TypeScript, RPC, local inference"></p>
+<p align="center"><a href="https://github.com/0xchewa/secondwave/actions/workflows/ci.yml"><img src="docs/github/badges/tests.svg" alt="52 public console tests passed on 19 September 2026"></a> <img src="docs/github/badges/engines.svg" alt="Early Signal and Second Wave"> <img src="docs/github/badges/node.svg" alt="Node 22.x"> <img src="docs/github/badges/chain.svg" alt="Robinhood Chain mainnet 4663"> <img src="docs/github/badges/stack.svg" alt="TypeScript, RPC, local inference"></p>
 
 <p align="center"><a href="#run-it-locally"><b>RUN THE DESK ↓</b></a> &nbsp; / &nbsp; <a href="#second-wave--read-the-structure">THE METHOD</a> &nbsp; / &nbsp; <a href="#open-the-model-desk">MODEL RECORD</a> &nbsp; / &nbsp; <a href="docs/README.md">FIELD MANUAL</a></p>
 
@@ -14,7 +14,7 @@ You caught the launch. Watched the first candle go vertical. Sold into the pullb
 
 Second Wave follows that story on **Pons v2, Robinhood Chain**. Early Signal studies a launch at the point where its first information becomes available. Second Wave follows the structure after migration: the first move, the retracement, the base and the life of a scenario.
 
-This edition is a **read-only, local research console**. Launch-time ranking, scenario detection, model explanations and frozen artifacts run on your machine. Start with **196 recorded on-chain markets**, then continue collection directly through your Robinhood Chain RPC. No account, wallet, database or hosted API is needed.
+This edition is a **read-only, local research terminal**. Early estimates, scenario detection, explanations and frozen artifacts run on your machine. `npm start` opens the live desk and continues from a verified **39,605-token bootstrap**. Use ordinary Robinhood Chain RPC, or add your own HyperSync token for faster history. No wallet, database or project-hosted API is needed.
 
 ```sh
 git clone https://github.com/0xchewa/secondwave.git
@@ -94,16 +94,19 @@ The original Wave24 feature set and scenario-aware candidate are separate versio
 
 <sub>Recorded inputs from 19 September 2026, calculated locally. [Wave](docs/github/console-wave.png) · [Early](docs/github/console-early.png) · [Models](docs/github/console-models.png) · [Capture record](docs/github/console-capture.json)</sub>
 
-A compact feed and an inspection pane keep the market and its context together. Read stage, age, quote price, target, invalidation and observed **60-second sell pressure**. The inspector connects those values to the retained trade path and the model's explanations. Small terminal? Press Enter to open the inspector across the screen.
+A compact feed and an inspection pane keep the market and its context together. Read stage, age, quote price, target, invalidation and observed **60-second sell pressure**. Inspect minute OHLCV, complete **5m / 1h / 24h** flow and model explanations. Small terminal? Press Enter to open the inspector across the screen.
 
 | Key | Action | Key | Action |
 |:---|:---|:---|:---|
 | `1` / `2` / `3` | Early / Wave / models | `/` | Search symbol or contract |
 | `↑` / `↓` or `j` / `k` | Select a token | `s` / `f` | Sort / filter |
 | `Enter` | Open the inspector | `e` | Export the selected calculation |
-| `l` | Start RPC collection | `?` / `q` | Controls / quit |
+| `h` | Prepare history from launch | `a` | Ready feed / complete catalogue |
+| `w` / `c` | Flow window / chart range | `v` | Launch facts + explanations |
+| `m` | Minimum Early estimate | `l` | Start or retry live sync |
+| `?` / `q` | Controls / quit | `--recorded` | Explicit offline replay |
 
-Search covers **every record in the local session**, including rows outside the visible screen. This small standalone collector watches a bounded set of recent markets; arbitrary historical contracts need an imported session containing their observations. It does not claim a complete market census.
+Search covers **every record in the local catalogue**, including expired and ineligible contracts. A full CA bypasses view filters. For a contract outside that catalogue, use `lookup` or enter the CA and press `h`: HyperSync searches verified factory events; RPC supports a bounded `--from-block` range. History preparation is resumable and never labels an unfinished scan as complete.
 
 ## The Wave research ledger
 
@@ -123,7 +126,7 @@ This is the dated [published research record](data/evidence.json), not a live pr
 
 ## Early Signal / read the launch
 
-Early Signal starts upstream: what can be known about a launch before its later outcome exists? Launch-time features describe the transaction, caller context, prior launch history and the model's eligible comparison universe. The console pairs relative rank with three feature contributions and the available launch facts. The primary display is TOP %, measured against the frozen eligible reference population.
+Early Signal starts upstream: what can be known about a launch before its later outcome exists? Launch-time features describe the transaction, caller context, prior launch history and the model's eligible comparison universe. The primary display is **MODEL ESTIMATE**, using the active model and its saved live correction. **TOP %** remains secondary, measured against the frozen eligible reference population. The ready feed uses the four-hour Early window, verified quote units, price, curve reserve and complete trading history. Current estimates pause when collection is more than 90 seconds behind.
 
 The useful interaction is fast: scan, compare, open the contract, inspect why it ranked there. Eligibility and missing-data states stay separate from the model's explanations. Unsupported quote units cannot quietly turn into a convincing-looking USD price.
 
@@ -149,7 +152,7 @@ The top-decile group had **4.12×** the observed migration rate of the full diag
 | Average precision | **0.062661** |
 | Brier score | **0.010961** |
 
-All values come from the 16 September 2026 [published evaluation](data/evidence.json). This test set was previously viewed and remains diagnostic. Approved migration probabilities are gated. The console exposes the active rank-only behavior and does not label that rank as a chance of migration.
+All values come from the 16 September 2026 [published evaluation](data/evidence.json). This test set was previously viewed and remains diagnostic. The numerical model estimate remains experimental; approved probability gates stay disabled. TOP describes relative rank and is never relabeled as a migration probability.
 
 ## Open the model desk
 
@@ -193,12 +196,12 @@ flowchart LR
 
 | Question at the desk | What to inspect |
 |:---|:---|
-| “Did I miss the launch?” | Local contract search, launch time, retained event path and migration time |
-| “What made this one stand out?” | Early rank, available launch facts and model contributions |
+| “Did I miss the launch?” | Contract lookup, launch time, minute OHLCV and migration time |
+| “What made this one stand out?” | Early estimate, secondary rank, launch facts and model contributions |
 | “Is the pullback becoming a base?” | Wave stage, base interval, width, target and invalidation |
 | “Who is pressing the sell side?” | Observed sell share, activity interval and largest-sell context where available |
 | “Is that number actually in dollars?” | The price's explicit quote unit; native quote prices remain in ETH |
-| “Why does the chart stop there?” | Recorded coverage, retained sample and the local collector checkpoint |
+| “Why does the chart stop there?” | Covered intervals, chart range and resumable history preparation |
 | “Did the scenario work?” | Its recorded outcome, deadline and supporting chain evidence |
 
 The boring distinctions are useful when the chart gets loud: absent data versus zero, FDV versus circulating capitalization, a curve's progress versus a model estimate, a short retained sample versus a lifetime history.
@@ -209,6 +212,8 @@ The boring distinctions are useful when the chart gets loud: absent data versus 
 flowchart LR
     CH["Pons v2 / Chain 4663"] --> RPC["Your read-only RPC"]
     RPC --> CO["Canonical events + causal features"]
+    CH --> HS["Optional HyperSync / indexed history"]
+    HS --> CO
     CO --> CP["Atomic local checkpoint: cursor + hash + events"]
     CP --> M["Local Early + Wave engines"]
     A["Verified frozen artifacts"] --> M
@@ -219,11 +224,11 @@ flowchart LR
 
 **The model lives here.** The RPC supplies chain observations. Ranking and scenario evaluation execute locally; there is no remote inference endpoint hidden behind the console.
 
-**The cursor has a memory.** The included seed carries historical caller counts and exemption overlaps. New factory events advance those counters in chain order. A bounded visible feed does not reset the historical features to zero. The seed records **313,051 launch callers**, **44,348 migration callers** and **276,028 observed exemption addresses** at its checkpoint.
+**The cursor has a memory.** The included seed carries historical caller counts and exemption overlaps. New factory events advance those counters in chain order. A bounded visible feed does not reset the historical features to zero. The seed contains accumulated public factory-caller history at the block recorded in [the input manifest](data/manifest.json).
 
 **A page either commits or stays put.** Block hashes are checked before and after collection. Cursor, model inputs and events are written together through an atomic file replacement. Failed RPC reads preserve the last committed page. A changed anchor stops collection so data from different forks cannot be silently mixed.
 
-**The scope stays visible.** The local edition keeps up to 1,000 recent markets, watches up to 128 native-quote migrated pools and reads the 64 newest native-quote curves. Reserve progress is sampled for the newest eight curves per page. It retains a short recent trade tape plus model state, not a lifetime trading archive. See [data provenance and limits](docs/DATA_SOURCES.md).
+**The scope stays visible.** The collector retains the whole available 72-hour catalogue and watches up to **512 native migrated pools**. All known native curves in that window are read; reserve changes include buys, sells, fees, tax and locked buybacks. Minute OHLCV is stored separately from the short detector tick tail. Selected history can be rebuilt from launch and retained locally. See [data provenance and limits](docs/DATA_SOURCES.md).
 
 ## Run it locally
 
@@ -236,21 +241,24 @@ npm ci
 npm start
 ```
 
-The first screen is explicitly marked **RECORDED**. It evaluates the included real inputs locally and makes no network requests. The recorded timestamp stays attached to the session.
+`npm start` opens **live mode**. The dated seed is a starting point; the desk says **CATCHING UP** until collection is current. For a completely offline first look, run `npm start -- --recorded`. That mode uses its disclosed historical clock and makes no network requests.
 
-### Switch on your own RPC
+### Choose your data transport
 
 Copy `.env.example` to `.env` and set your provider URL:
 
 ```dotenv
 SWAVE_RPC_URL=https://rpc.mainnet.chain.robinhood.com
+# Optional: faster history with your own Envio account
+ENVIO_API_TOKEN=
+ENVIO_HYPERSYNC_URL=https://robinhood.hypersync.xyz
 ```
 
 ```sh
-npm start -- --live
+npm start
 ```
 
-The official public endpoint is the default. A provider supporting historical logs and state reads is useful for catching up from the seed. The desk labels **CATCHING UP** until the saved cursor reaches the confirmed head; first sync can take time as the seed gets older. It resumes from `.local/checkpoint.json.gz` after restart. RPC credentials stay in your ignored `.env`.
+The official public RPC is the default. An Envio token automatically selects HyperSync for indexed event history; RPC independently verifies block boundaries and contract state. `--transport rpc` forces RPC-only collection. First sync can take time as the seed gets older or provider limits apply. The desk resumes from `.local/checkpoint.json.gz` after restart. Credentials stay in your ignored `.env`.
 
 Prefer a finite collection job?
 
@@ -260,7 +268,16 @@ npm start -- snapshot --state .local/checkpoint.json.gz --mode wave
 npm start -- inspect 0xYOUR_CONTRACT --state .local/checkpoint.json.gz
 ```
 
-The last command requires a contract already present in that local session. To export or import a portable record:
+For an older contract outside your catalogue:
+
+```sh
+npm start -- lookup 0xYOUR_CONTRACT --transport hypersync
+npm start -- hydrate 0xYOUR_CONTRACT --pages 100
+```
+
+Without HyperSync, `lookup` needs `--from-block` near the launch (maximum 200,000 blocks). Old contracts without saved launch-time features keep Early unavailable; later caller history is never substituted. Wave can be reconstructed from verified migration events independently.
+
+To export or import a portable record:
 
 ```sh
 npm start -- export --state .local/checkpoint.json.gz --output .local/session.json.gz
@@ -279,7 +296,7 @@ npm test
 npm run bench
 ```
 
-The dated badge records **35 public-console tests** passed on 19 September 2026. Checks cover frozen numerical outputs, resumed Wave scenarios, missing history, quote decimals, canonical ordering, reorg rejection, interrupted RPC reads, atomic state, terminal dimensions and unsafe terminal text. Synthetic cases are explicitly named. CI runs on Windows and Linux.
+The dated badge records **52 public-console tests** passed on 19 September 2026. Checks cover frozen numerical outputs, exact estimate/rank parity for 40 real launches, resumed Wave scenarios, complete flow windows, HyperSync pagination and joins, quote decimals, canonical ordering, reorg rejection, atomic checkpoints, more than 1,000 markets, terminal dimensions and unsafe terminal text. Synthetic cases are explicitly named. CI runs on Windows and Linux.
 
 <details>
 <summary><b>Rebuild the visual research desk</b></summary>

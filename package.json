@@ -1,6 +1,6 @@
 {
   "name": "secondwave-terminal",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "description": "A local research terminal for Early Signal and Second Wave on Robinhood Chain",
   "type": "module",

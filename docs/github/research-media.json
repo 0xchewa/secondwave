@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-19T11:03:58.293Z",
+  "generatedAt": "2026-09-19T12:08:44.537Z",
   "source": "data/evidence.json",
   "scenes": [
     {
@@ -20,5 +20,5 @@
     }
   ],
   "waveMachine": "Illustrated state transitions. Prices are schematic, not a market recording.",
-  "tests": "35 public console tests, passed 19 September 2026"
+  "tests": "52 public console tests, passed 19 September 2026"
 }
