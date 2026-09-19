@@ -1,0 +1,149 @@
+{
+  "publishedAt": "2026-09-16T13:27:51.973Z",
+  "source": "Recorded production evaluation; public snapshot",
+  "model": {
+    "early": {
+      "testRole": "Previously viewed diagnostic; no release approval",
+      "rankEnabled": true,
+      "probabilityEnabled": false,
+      "counts": {
+        "ca": 71486,
+        "te": 76827,
+        "tr": 89671
+      },
+      "audit": {
+        "events": 488268,
+        "missing": 0,
+        "restartParity": 490
+      },
+      "version": "Early Signal / 1b9a1cf0b4be",
+      "featureVersion": "Early Signal / causal factory-caller features v1",
+      "candidate": {
+        "n": 76827,
+        "positives": 857,
+        "rocAuc": 0.7457499037343397,
+        "averagePrecision": 0.06266071714930886,
+        "brier": 0.010961086851187088,
+        "logLoss": 0.06042132488339771,
+        "trainBaselineBrier": 0.011030518726889966,
+        "trainBaselineLogLoss": 0.061244505286654725,
+        "observedRate": 0.011154932510705871,
+        "baseRate": 0.011154932510705871,
+        "meanPrediction": 0.022757287933677976,
+        "topDecileLift": 4.118859000253784,
+        "topFractions": [
+          {
+            "fraction": 0.01,
+            "n": 769,
+            "positives": 76,
+            "precision": 0.0988296488946684
+          },
+          {
+            "fraction": 0.05,
+            "n": 3842,
+            "positives": 249,
+            "precision": 0.06480999479437793
+          },
+          {
+            "fraction": 0.1,
+            "n": 7683,
+            "positives": 353,
+            "precision": 0.04594559416894442
+          }
+        ]
+      }
+    },
+    "wave24": {
+      "version": "wave24-expanded-77cf9df91dc3",
+      "activeVersion": "wave24-174b4c3205be",
+      "testRole": "Previously viewed diagnostic; no independent probability approval",
+      "evaluatedAt": "2026-09-15T17:49:04.050Z",
+      "probabilityEnabled": false,
+      "reasons": [
+        "Frozen Wave24 quality gates failed; candidate not activated"
+      ],
+      "counts": {
+        "test": {
+          "tokens": 31,
+          "negative": 20,
+          "outcomes": {
+            "impulse": 11,
+            "breakdown": 18,
+            "unresolved": 2
+          },
+          "positive": 11
+        },
+        "train": {
+          "tokens": 111,
+          "negative": 77,
+          "outcomes": {
+            "impulse": 34,
+            "breakdown": 74,
+            "unresolved": 3
+          },
+          "positive": 34
+        },
+        "calibration": {
+          "tokens": 68,
+          "negative": 47,
+          "outcomes": {
+            "impulse": 21,
+            "breakdown": 43,
+            "unresolved": 4
+          },
+          "positive": 21
+        }
+      },
+      "latestDataset": {
+        "newTest": {
+          "tokens": 41,
+          "negative": 32,
+          "positive": 9,
+          "previouslyViewedTokensExcluded": 31
+        },
+        "outcomes": {
+          "impulse": 88,
+          "breakdown": 211,
+          "unresolved": 11
+        },
+        "fitBlockedBy": "Need at least 10 positives in the new independent test partition; have 9",
+        "independentTokens": 310,
+        "probabilityEnabled": false
+      },
+      "evaluation": {
+        "n": 31,
+        "positives": 11,
+        "rocAuc": 0.3409090909090909,
+        "averagePrecision": 0.30031828273445005,
+        "brier": 0.2811686714379925,
+        "logLoss": 0.8404446377892864,
+        "trainBaselineBrier": 0.2312835939688599,
+        "trainBaselineLogLoss": 0.6557858720268032,
+        "observedRate": 0.3548387096774194,
+        "baseRate": 0.3548387096774194,
+        "meanPrediction": 0.29216983816655917,
+        "topDecileLift": 0,
+        "topFractions": [
+          {
+            "fraction": 0.01,
+            "n": 1,
+            "positives": 0,
+            "precision": 0
+          },
+          {
+            "fraction": 0.05,
+            "n": 2,
+            "positives": 0,
+            "precision": 0
+          },
+          {
+            "fraction": 0.1,
+            "n": 4,
+            "positives": 0,
+            "precision": 0
+          }
+        ]
+      }
+    }
+  }
+}
