@@ -39,14 +39,15 @@ export function scoreEarly(m: Market, at: number) {
   } as Record<string, string>)[r.feature] ?? r.text }));
   return { state, topPercent, score: 100 - topPercent, reasons, peak, probability: null };
 }
-const stages: Record<string, string> = { awaiting_rise: 'OBSERVING', awaiting_pullback: 'PULLBACK', forming_base: 'BASE FORMING', base: 'ACTIVE', weakening: 'ACTIVE', impulse: 'IMPULSE', breakdown: 'INVALIDATED', unresolved: 'EXPIRED', insufficient_history: 'INSUFFICIENT HISTORY', insufficient_data: 'INSUFFICIENT DATA', ineligible: 'INELIGIBLE' };
+const stages: Record<string, string> = { awaiting_rise: 'OBSERVING', awaiting_pullback: 'PULLBACK', forming_base: 'BASE FORMING', base: 'ACTIVE', weakening: 'ACTIVE', impulse: 'IMPULSE', breakdown: 'INVALIDATED', unresolved: 'EXPIRED', observation_expired: 'EXPIRED', insufficient_history: 'INSUFFICIENT HISTORY', insufficient_data: 'INSUFFICIENT DATA', ineligible: 'INELIGIBLE' };
 export function scoreMarket(m: Market, at: number): DeskRow {
   const early = scoreEarly(m, at);
   const empty = { target: null, invalidation: null, deadline: null, pressure: null, pressureComplete: false, buys: 0, sells: 0, probability: null, scenarioId: null };
   if (!m.history) return { market: m, early, wave: { ...empty, stage: m.phase === 'curve' ? 'ON CURVE' : 'HISTORY NEEDED', reason: 'A verified migration and market history are required' } };
   const h = structuredClone(m.history), result = m.terminalGate ?? replay(h, m.coverage, at, structuredClone(m.checkpoint));
   const p = 'lastAssessment' in result ? result.lastAssessment : null;
-  const pressure = sellPressure([...(m.checkpoint?.seen ?? []), ...h.ticks].filter((t, i, all) => all.findIndex(v => v.block === t.block && v.log === t.log) === i), at, h.decimals, m.coverage, h.ticks.at(-1)?.block ?? h.migrationBlock);
+  const pressureTicks = [...new Map([...(m.checkpoint?.seen ?? []), ...h.ticks].map(t => [`${t.block}:${t.log}`, t])).values()];
+  const pressure = sellPressure(pressureTicks, at, h.decimals, m.coverage, h.ticks.at(-1)?.block ?? h.migrationBlock);
   const active = ['base', 'weakening'].includes(result.state);
   return { market: m, early, wave: {
     stage: stages[result.state] ?? result.state.toUpperCase().replaceAll('_', ' '), reason: result.reason,
