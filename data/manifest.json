@@ -1,14 +1,14 @@
 {
-  "recordedAt": "2026-09-19T10:14:39+00:00",
+  "recordedAt": "2026-09-19T11:42:08+00:00",
   "chainId": 4663,
-  "block": 67002756,
-  "hash": "0xbf51a662bcaf5ba5c66bbf9219716c1c2f24c770d851c8d4ade54ae164ea826e",
-  "markets": 196,
-  "source": "Canonical Pons v2 observations and accumulated factory history; bounded research input export",
-  "selection": "128 recent launches plus at most 20 retained markets per detector state; not a representative evaluation set or complete market census",
-  "continuation": "Wave records may resume a saved engine checkpoint. The retained tick tail is not lifetime activity.",
+  "block": 67054871,
+  "hash": "0x9b85035cff95ef5de1d5c1535b182845b655b72bf27a7794792187e7b8341780",
+  "markets": 39605,
+  "source": "Canonical Pons v2 launch observations, minute bars, verified coverage and factory-caller history at one consistent block",
+  "selection": "Full available 72-hour launch catalogue plus recent migrated markets; this is a dated bootstrap, not live data or an evaluation set",
+  "continuation": "Resumable local collection; saved causal Wave checkpoints and explicitly covered minute OHLCV. Missing history can be prepared independently.",
   "files": {
-    "seed.json.gz": "c6e8ac8fd23db56313a5e5939e859b4c43e5632dc662a7d6998bb41ef63bad2e",
-    "session.json.gz": "30b264bac7660b300d2c1c2d7861ff5dc1435e18cccbdffce9b58dc1e2ffcfe8"
+    "seed.json.gz": "897cc6a740c39b676c01882e15d41dbff9f04e61aa0b00dc1611a1c5a74867c1",
+    "session.json.gz": "fe6e6183c54142be17d2497b19b364c55b9a24f60bda0dd23aa7e80e7b776ce5"
   }
 }
