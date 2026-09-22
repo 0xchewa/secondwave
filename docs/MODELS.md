@@ -1,39 +1,39 @@
-# Модели и воспроизводимость
+# Models and Reproducibility
 
-## Что включено
+## Included components
 
-На 19 сентября 2026 SHA-256 трёх артефактов сверены с работающими модельными файлами. [Manifest](../models/manifest.json) фиксирует веса и исходные файлы. Чистые функции Early features, GBDT inference, explanations, Wave detector и Wave24 replay перенесены без изменения численной логики. Адаптеры файловой сессии и RPC написаны для этой консоли.
+As of September 19, 2026, the SHA-256 values of three artifacts have been verified against the active model files. The [manifest](../models/manifest.json) records their weights and source files. Pure functions for Early features, GBDT inference, explanations, the Wave detector, and Wave24 replay were ported without changing their numerical logic. File-session and RPC adapters were written for this console.
 
-| Компонент | Вход | Локальный результат |
+| Component | Input | Local result |
 | --- | --- | --- |
-| Early Signal | 23 causal features на момент запуска | MODEL ESTIMATE, secondary TOP и вклады признаков |
-| Second Wave | Проверенная миграция, упорядоченные сделки и coverage | Стадия, границы scenario, deadline и исход |
-| Wave probability artifact | 14 признаков | Сохранён, но probability gate выключен |
-| Experimental peak range | Early vector и 200 деревьев | Диапазон с residual quartiles, minimum 1× |
+| Early Signal | 23 causal features at launch time | MODEL ESTIMATE, secondary TOP, and feature contributions |
+| Second Wave | Verified migration, ordered trades, and coverage | Stage, scenario boundaries, deadline, and outcome |
+| Wave probability artifact | 14 features | Preserved, but the probability gate is disabled |
+| Experimental peak range | Early vector and 200 trees | Range with residual quartiles, minimum 1× |
 
 ## Early Signal
 
-Основной показатель соответствует Terminal: `MODEL ESTIMATE = sigmoid(a × logit(predict(model, x)) + b)`, где коэффициенты берутся из `liveCalibration` активного артефакта. Clamp перед logit: `[1e-9, 1-1e-9]`. Это экспериментальная оценка модели; флаг approved probability не включается.
+The primary value matches Terminal: `MODEL ESTIMATE = sigmoid(a × logit(predict(model, x)) + b)`, where the coefficients come from `liveCalibration` in the active artifact. The clamp before logit is `[1e-9, 1-1e-9]`. This is an experimental model estimate; the approved-probability flag is not enabled.
 
-Secondary TOP считается по замороженной reference population, а не по строкам экрана. TOP 65% не означает 65% вероятности миграции. Горизонт Early — четыре часа. Текущая оценка скрывается после миграции, истечения окна, reorg или отставания коллектора более чем на 90 секунд. Исторический результат сохраняется отдельно. Неподдерживаемая quote currency и отсутствующий causal vector не превращаются в числовую оценку.
+Secondary TOP is calculated against a frozen reference population, not the rows currently displayed. TOP 65% does not mean a 65% probability of migration. The Early horizon is four hours. The current estimate is hidden after migration, window expiry, a reorg, or collector lag above 90 seconds. The historical result is preserved separately. An unsupported quote currency or missing causal vector is not converted into a numeric estimate.
 
-Накопленная история относится к **factory caller**, который может отличаться от конечного автора токена. Seed сохраняет предшествующие launch/graduation counts, пересечения exemptions и недавние factory launches. Каждый новый запуск использует состояние до самого события.
+Accumulated history belongs to the **factory caller**, which may differ from the token's final creator. The seed preserves preceding launch/graduation counts, exemption intersections, and recent factory launches. Every new launch uses the state from before that event.
 
 ## Second Wave
 
-Движение → откат → база → scenario. Наблюдаемые стадии существуют независимо от вероятностной модели. Target и invalidation относятся к конкретной оценке с её временем и horizon; последующие события проверяются в порядке block/log. Переход через нижнюю границу раньше подтверждённого верхнего движения фиксирует неуспех.
+Move → pullback → base → scenario. Observable stages exist independently of the probability model. Target and invalidation belong to a specific estimate with its timestamp and horizon; later events are evaluated in block/log order. Crossing the lower boundary before the upper move is confirmed records a failure.
 
-Покрытие проверяется отдельно от количества сделок. Пустой, но полностью просмотренный интервал отличается от пропуска истории. Продолжение checkpoint использует то же состояние движка, что и последовательный replay. График и flow показывают сохранённый интервал; маленький tail не выдаётся за все сделки токена.
+Coverage is verified independently of trade count. An empty but fully inspected interval differs from a history gap. Checkpoint continuation uses the same engine state as sequential replay. The chart and flow show the stored interval; a small tail is not presented as the token's complete trade history.
 
-Approved probability gates Early и Wave отключены. Early показывает ту же экспериментальную численную оценку, что и Terminal; у Wave основными результатами остаются наблюдаемая стадия и сценарий. Выпуск не снимает release gates.
+Approved Early and Wave probability gates are disabled. Early displays the same experimental numeric estimate as Terminal; Wave primarily reports the observed stage and scenario. This release does not waive the release gates.
 
-## Датированное исследование
+## Dated research
 
-[data/evidence.json](../data/evidence.json) — сохранённая оценка от 16 сентября, а не текущая перепись рынка. Early: train/calibration/test 89 671 / 71 486 / 76 827; ROC-AUC 0.745750; top-decile lift 4.12×. Просмотренный test остаётся diagnostic.
+[data/evidence.json](../data/evidence.json) is a preserved evaluation from September 16, not a current market census. Early: train/calibration/test 89,671 / 71,486 / 76,827; ROC-AUC 0.745750; top-decile lift 4.12×. The inspected test remains diagnostic.
 
-Wave: expanded dataset 310 независимых токенов; 88 impulse, 211 breakdown, 11 unresolved. Новый непросмотренный test — 41 токен, 9 positives при минимуме 10. Expanded candidate не активирован. 39 605 токенов текущего bootstrap — рыночные входы для работы, а не новая evaluation выборка.
+Wave: expanded dataset of 310 independent tokens; 88 impulse, 211 breakdown, and 11 unresolved. The new uninspected test contains 41 tokens and 9 positives, below the minimum of 10. The expanded candidate is not active. The 39,605 tokens in the current bootstrap are market inputs for operation, not a new evaluation sample.
 
-## Проверки
+## Verification
 
 ```sh
 node scripts/model-record.mjs
@@ -42,6 +42,6 @@ npm run bench
 npm test
 ```
 
-Bench проверяет SHA артефактов и записанных входов, затем 882 численных утверждения Early/peak. Дополнительный тест воспроизводит сохранённые estimate и TOP для 40 реальных launch vectors с точным равенством. Wave проверяется тестами causal replay, restart, покрытия и порядка исходов. Нулевое отклонение в parity-тесте говорит о реализации, не о предсказательной точности.
+The benchmark verifies artifact and recorded-input SHA values, then checks 882 Early/peak numerical assertions. An additional test reproduces the stored estimate and TOP for 40 real launch vectors with exact equality. Wave is covered by tests for causal replay, restart, coverage, and outcome ordering. Zero deviation in a parity test demonstrates implementation parity, not predictive accuracy.
 
-Включены веса, inference и данные для воспроизведения. Полный сырой архив и полный training pipeline сюда не публикуются. Обязательные авторские уведомления и совместимые внутренние идентификаторы артефактов сохранены в [THIRD_PARTY_NOTICES](../THIRD_PARTY_NOTICES.md).
+Weights, inference, and reproducibility data are included. The full raw archive and complete training pipeline are not published here. Required attribution notices and compatible internal artifact identifiers are preserved in [THIRD_PARTY_NOTICES](../THIRD_PARTY_NOTICES.md).
