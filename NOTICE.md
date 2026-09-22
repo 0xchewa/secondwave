@@ -1,6 +1,6 @@
 # Second Wave / public research edition
 
-Copyright 2026 0xchewa. This repository contains the standalone console and the
+Copyright 2026 davanGRIND. This repository contains the standalone console and the
 model components explicitly published with it. It does not include the hosted
 product, its infrastructure or any service credentials.
 
