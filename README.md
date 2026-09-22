@@ -1,6 +1,6 @@
 <img src="docs/github/signal-intro.gif" alt="Second Wave — animated signal field from launch through migration, pullback, base and the next setup" width="100%">
 
-<p align="center"><sub>by <a href="https://x.com/0xchewa">0xchewa</a></sub></p>
+<p align="center"><sub>by <a href="https://x.com/davangrind">davanGRIND</a></sub></p>
 
 <p align="center"><a href="https://github.com/0xchewa/secondwave/actions/workflows/ci.yml"><img src="docs/github/badges/tests.svg" alt="52 public console tests passed on 19 September 2026"></a> <img src="docs/github/badges/engines.svg" alt="Early Signal and Second Wave"> <img src="docs/github/badges/node.svg" alt="Node 22.x"> <img src="docs/github/badges/chain.svg" alt="Robinhood Chain mainnet 4663"> <img src="docs/github/badges/stack.svg" alt="TypeScript, RPC, local inference"></p>
 
