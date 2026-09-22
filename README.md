@@ -2,7 +2,7 @@
 
 <p align="center"><sub>by <a href="https://x.com/davangrind">davanGRIND</a></sub></p>
 
-<p align="center"><a href="https://github.com/0xchewa/secondwave/actions/workflows/ci.yml"><img src="docs/github/badges/tests.svg" alt="52 public console tests passed on 19 September 2026"></a> <img src="docs/github/badges/engines.svg" alt="Early Signal and Second Wave"> <img src="docs/github/badges/node.svg" alt="Node 22.x"> <img src="docs/github/badges/chain.svg" alt="Robinhood Chain mainnet 4663"> <img src="docs/github/badges/stack.svg" alt="TypeScript, RPC, local inference"></p>
+<p align="center"><a href="https://github.com/davangrind/secondwave/actions/workflows/ci.yml"><img src="docs/github/badges/tests.svg" alt="52 public console tests passed on 19 September 2026"></a> <img src="docs/github/badges/engines.svg" alt="Early Signal and Second Wave"> <img src="docs/github/badges/node.svg" alt="Node 22.x"> <img src="docs/github/badges/chain.svg" alt="Robinhood Chain mainnet 4663"> <img src="docs/github/badges/stack.svg" alt="TypeScript, RPC, local inference"></p>
 
 <p align="center"><a href="#run-it-locally"><b>RUN THE DESK ↓</b></a> &nbsp; / &nbsp; <a href="#second-wave--read-the-structure">THE METHOD</a> &nbsp; / &nbsp; <a href="#open-the-model-desk">MODEL RECORD</a> &nbsp; / &nbsp; <a href="docs/README.md">FIELD MANUAL</a></p>
 
@@ -17,7 +17,7 @@ Second Wave follows that story on **Pons v2, Robinhood Chain**. Early Signal stu
 This edition is a **read-only, local research terminal**. Early estimates, scenario detection, explanations and frozen artifacts run on your machine. `npm start` opens the live desk and continues from a verified **39,605-token bootstrap**. Use ordinary Robinhood Chain RPC, or add your own HyperSync token for faster history. No wallet, database or project-hosted API is needed.
 
 ```sh
-git clone https://github.com/0xchewa/secondwave.git
+git clone https://github.com/davangrind/secondwave.git
 cd secondwave
 npm ci
 npm start
@@ -235,7 +235,7 @@ flowchart LR
 Use **Node 22.x** (22.12 or later), Git and a terminal with a monospace font. No PostgreSQL, Docker or wallet is required.
 
 ```sh
-git clone https://github.com/0xchewa/secondwave.git
+git clone https://github.com/davangrind/secondwave.git
 cd secondwave
 npm ci
 npm start
